@@ -2,5 +2,7 @@ Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
 gunicorn==23.0.0
 Flask-Migrate==4.0.4
-psycopg2-binary==2.9.7
+# Usar psycopg (psycopg3) en su variante binaria; más compatible con Python 3.13
+# Pinear a una versión estable para reproducibilidad
+psycopg[binary]==3.2.2
 python-dotenv==1.0.0

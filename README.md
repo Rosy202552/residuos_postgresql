@@ -53,6 +53,18 @@ En Render (producción)
 pip install -r requirements.txt; flask db upgrade
 ```
 
+Nota sobre drivers PostgreSQL y Python 3.13
+
+Render usa Python 3.13 en tus logs y la extensión de psycopg2 (psycopg2-binary) puede dar errores ABI como:
+
+```
+ImportError: ... _psycopg.cpython-313-x86_64-linux-gnu.so: undefined symbol: _PyInterpreterState_Get
+```
+
+Para evitar esto recomendamos usar `psycopg` (psycopg3) en su variante binaria. En este repositorio hemos fijado `psycopg[binary]==3.2.2` en `requirements.txt` para reproducibilidad en Render.
+
+Si prefieres quedarte con psycopg2, tendrías que asegurarte de usar una rueda (wheel) compatible con Python 3.13 en Render o compilar desde fuente (requiere dependencias del sistema como libpq-dev), lo cual suele ser más frágil.
+
 - Asegúrate de que el `start command` use gunicorn o tu preferencia, p. ej.: `gunicorn app:app`.
 
 Nota sobre tu base de datos en Render
@@ -85,3 +97,20 @@ Si quieres, puedo:
 - Añadir el directorio `migrations/` inicial (ejecutando `flask db init` aquí y crear la migración inicial). Necesitaré permiso para crear esos archivos en el repo.
 - Añadir un pequeño script `manage.py` para facilitar comandos de migración.
 - Configurar `python-dotenv` para cargar `.env` en desarrollo automáticamente.
+
+Script de build recomendado para Render
+
+He añadido `render-build.sh` al repositorio para facilitar el proceso de build en Render. El script:
+
+- actualiza pip/setuptools/wheel
+- instala las dependencias de `requirements.txt`
+- imprime información sobre si está instalado `psycopg` (psycopg3) o `psycopg2`
+- ejecuta `flask db upgrade`
+
+Usa este script en Render como Build Command ejecutando:
+
+```text
+bash render-build.sh
+```
+
+Esto te permitirá ver en los logs cuál driver quedó instalado y confirmará que `flask db upgrade` se ejecutó.

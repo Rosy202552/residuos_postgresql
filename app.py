@@ -36,6 +36,19 @@ if raw_db_url:
             safe_db_url = urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
         else:
             safe_db_url = raw_db_url
+        # Si el URL viene con el esquema corto `postgres://`, normalizar a `postgresql://`
+        if safe_db_url.startswith('postgres://'):
+            safe_db_url = 'postgresql://' + safe_db_url[len('postgres://'):]
+        # Si el paquete `psycopg` (psycopg3) está disponible, instruct SQLAlchemy
+        # para usarlo cambiando el esquema a `postgresql+psycopg://`.
+        try:
+            import psycopg
+            # sólo sustituimos el prefijo si no contiene ya +psycopg
+            if safe_db_url.startswith('postgresql://') and 'postgresql+psycopg' not in safe_db_url:
+                safe_db_url = safe_db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+        except Exception:
+            # psycopg no está instalado, dejaremos la URL tal cual (usará psycopg2 si está disponible)
+            pass
     except Exception:
         # Si falla el parse por cualquier razón, usamos la raw URL (la excepción
         # será más informativa en el intento de conexión).

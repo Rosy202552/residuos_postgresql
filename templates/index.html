@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proyecto PEC</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body class="inicio">
+    <div class="overlay">
+        <h1>Bienvenidos al Proyecto PEC</h1>
+        <a href="{{ url_for('menu') }}" class="button">Entrar</a>
+    </div>
+</body>
+</html>

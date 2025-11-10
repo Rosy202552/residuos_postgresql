@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from models import db, Denuncia
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from flask_migrate import Migrate
 import time
 import os
+import sys
+import logging
 from urllib.parse import urlsplit, urlunsplit, quote_plus
 
 app = Flask(__name__,
@@ -75,6 +77,15 @@ db.init_app(app)
 # Inicializar Flask-Migrate (maneja migraciones con Alembic)
 migrate = Migrate(app, db)
 
+# Configurar logging para que los errores y excepciones vayan a stdout (visible en Render logs)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+handler.setFormatter(formatter)
+if not app.logger.handlers:
+    app.logger.addHandler(handler)
+app.logger.setLevel(logging.INFO)
+
 # NOTA: No ejecutamos `db.create_all()` automáticamente al importar la app.
 # Usar migraciones (Flask-Migrate / Alembic) para aplicar cambios de esquema
 # en entornos de desarrollo y producción. Para operaciones puntuales puedes usar
@@ -140,6 +151,27 @@ def denuncias():
         return redirect(url_for('denuncias'))
     denuncias = Denuncia.query.all()
     return render_template('denuncias.html', denuncias=denuncias)
+
+
+@app.route('/_health')
+def health_check():
+    """Endpoint temporal para comprobar conexión a la BD.
+    Devuelve JSON con estado y registra la excepción completa en los logs si falla.
+    """
+    try:
+        # Ejecutar una consulta mínima
+        result = None
+        with app.app_context():
+            res = db.session.execute('SELECT 1')
+            try:
+                result = res.scalar()
+            finally:
+                res.close()
+        return jsonify({'status': 'ok', 'db_select_1': result}), 200
+    except Exception as e:
+        # Registrar excepción completa para que aparezca en los logs de Render
+        app.logger.exception('Health check DB query failed')
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
 def editar(id):
